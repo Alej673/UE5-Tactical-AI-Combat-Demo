@@ -71,4 +71,17 @@ protected:
 
 	// Guardamos al jugador temporalmente mientras sube la barra
 	AActor* JugadorDetectadoTemp = nullptr;
+
+	// --- SISTEMA DE MEMORIA DE COMBATE A CORTO PLAZO --- //
+
+	// Temporizador nativo para mantener el estado de alerta sin usar Tick
+	FTimerHandle TemporizadorCombate;
+
+	// Tiempo en segundos que el NPC se mantiene en cobertura esperándote
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IA|Combate")
+	float TiempoMemoriaCombate = 5.0f;
+
+	// Función que se ejecutará cuando el temporizador se agote
+	UFUNCTION()
+	void ApagarEstadoCombate();
 };

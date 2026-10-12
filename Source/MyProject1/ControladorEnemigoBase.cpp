@@ -9,6 +9,7 @@
 #include "Perception/AISense_Sight.h"
 #include "Perception/AISense_Hearing.h"
 #include "Perception/AISense_Damage.h"
+#include "TimerManager.h"
 
 AControladorEnemigoBase::AControladorEnemigoBase()
 {
@@ -76,13 +77,23 @@ void AControladorEnemigoBase::AlDetectarEstimulo(AActor* ActorDetectado, FAIStim
 				if (Estimulo.WasSuccessfullySensed())
 				{
 					Memoria->SetValueAsVector(FName("UltimaPosicionConocida"), Estimulo.StimulusLocation);
+					Memoria->SetValueAsBool(FName("EnCombate"), true); // Mantiene activa la rama de combate
+					// NUEVA LÍNEA: Si te vuelvo a ver directo, mi cobertura ya no sirve
+					Memoria->SetValueAsBool(FName("EstaEnCobertura"), false);
+
 					bEstaViendoJugador = true;
 					JugadorDetectadoTemp = ActorDetectado;
+
+					// Si te vuelve a ver, cancelamos la cuenta regresiva para que no salga del combate
+					GetWorld()->GetTimerManager().ClearTimer(TemporizadorCombate);
 				}
 				else
 				{
 					bEstaViendoJugador = false;
 					Memoria->SetValueAsVector(FName("UltimaPosicionConocida"), Estimulo.StimulusLocation);
+
+					// Te perdió de vista: Inicia el cronómetro de adrenalina (ej. 5 segundos)
+					GetWorld()->GetTimerManager().SetTimer(TemporizadorCombate, this, &AControladorEnemigoBase::ApagarEstadoCombate, TiempoMemoriaCombate, false);
 				}
 			}
 
@@ -197,5 +208,14 @@ void AControladorEnemigoBase::Tick(float DeltaTime)
 				}
 			}
 		}
+	}
+}
+
+void AControladorEnemigoBase::ApagarEstadoCombate()
+{
+	if (UBlackboardComponent* Memoria = GetBlackboardComponent())
+	{
+		// Se acabó el tiempo de memoria a corto plazo, el NPC sale a buscarte
+		Memoria->SetValueAsBool(FName("EnCombate"), false);
 	}
 }
